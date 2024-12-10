@@ -38,4 +38,4 @@ def test_should_be_login_link(browser):
     link = "http://selenium1py.pythonanywhere.com/"
     page = MainPage(browser, link)
     page.open()
-    page.sould_be_login_link()
+    page.should_be_login_link()
