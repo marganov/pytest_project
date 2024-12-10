@@ -7,4 +7,4 @@ class MainPage(BasePage):
         login_link.click()
 
     def sould_be_login_link(self):
-        self.browser.find_element(By.CSS_SELECTOR, "login_link_inv")
+        self.browser.find_element(By.CSS_SELECTOR, "login_link_invalid")
