@@ -1,37 +1,62 @@
 from .base_page import BasePage
 from .locators import ProductPageLocators
-import math
 from selenium.common.exceptions import NoAlertPresentException
-import pyperclip
-
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+import re
 
 class ProductPage(BasePage):
-    def should_be_promo_new_year_page(self):
-        self.should_be_promo_new_year_url()
-        self.should_be_add_to_basket_button()
-
-    def should_be_promo_new_year_url(self):
-        assert "?promo=newYear" in self.browser.current_url, "It's not promo URL"
-
     def should_be_add_to_basket_button(self):
         assert self.is_element_present(*ProductPageLocators.BUTTON_ADD_TO_BASKET), "Button is not presented"
 
-    def click_add_to_basket_button(self):
+    def add_to_basket(self):
+        # Добавляет товар в корзину
         button = self.browser.find_element(*ProductPageLocators.BUTTON_ADD_TO_BASKET)
         button.click()
+        self.solve_quiz_and_get_code()
+    
 
-    def solve_quiz_and_get_code(self):
-        """Решает формулу на капче и копирует код в буфер обмена (Ctrl+C)"""
-        alert = self.browser.switch_to.alert
-        x = alert.text.split(" ")[2]
-        answer = str(math.log(abs((12 * math.sin(float(x))))))
-        alert.send_keys(answer)
-        alert.accept()
-        try:
-            alert = self.browser.switch_to.alert
-            alert_text = alert.text
-            pyperclip.copy(alert_text.split()[-1])
-            print(f"Ваш код: {alert_text}")
-            alert.accept()
-        except NoAlertPresentException:
-            print("Alert отсутствует")
+    def should_be_msg_product_added_to_basket(self):
+        # Проверяет наличие сообщения об успешном добавлении товара в корзину
+        return self.is_element_present(
+            *ProductPageLocators.PRODUCT_WAS_ADDED_TO_BASKET), 'Отсутствует сообщение об успешном добавлении товара в корзину'
+
+    def get_product_name(self):
+        # Возвращает название товара
+        return self.browser.find_element(*ProductPageLocators.NAME).text
+    
+    def get_name_of_product_was_added_to_basket(self):
+        # Возвращает название товара, который был добавлен в корзину
+        return self.browser.find_element(*ProductPageLocators.PRODUCT_WAS_ADDED_TO_BASKET).text
+    
+    def should_product_added_to_basket(self):
+        # Проверяет, добавлен ли текущий товар в корзину
+        assert self.get_product_name() == self.get_name_of_product_was_added_to_basket(), 'В корзину добавлен не тот товар'
+
+
+    def should_be_price(self):
+        # Проверяет наличие цены товара
+        assert self.is_element_present(*ProductPageLocators.PRICE), 'Отсутствует цена товара'
+
+    def get_product_price(self):
+        # Возвращает цену товара
+        msg = self.browser.find_element(*ProductPageLocators.PRICE).text
+        return float(re.search(r'\d+[.,]\d{2}', msg).group(0).replace(',', '.')) if msg else 0
+
+    def should_be_basket_mini(self):
+        # Проверяет наличие суммы цен товаров, добавленных в корзину
+        return self.is_element_present(
+            *ProductPageLocators.BASKET_MINI), 'Отсутствует сумма цен товаров, добавленных в корзину'
+
+    def get_total_price(self):
+        # Возвращает сумму цен товаров, добавленных в корзину
+        msg = self.browser.find_element(*ProductPageLocators.BASKET_MINI).text
+        return float(re.search(r'\d+[.,]\d{2}', msg).group(0).replace(',', '.')) if msg else None if msg else 0
+    
+    def should_be_equal_prices(self):
+        # Проверяет равенство стоимости корзины и товара (ТЗ)
+        product_price = self.get_product_price()
+        total_price = self.get_total_price()
+        assert product_price == total_price, 'Цена в корзине и цена продукта не сходятся. Продукт: {}. Корзина: {}'.format(
+            product_price, total_price)
