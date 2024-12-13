@@ -12,4 +12,3 @@ class BasketPage(BasePage):
     def should_not_be_items(self):
         """Проверяет отсутствие продуктов в корзине"""
         self.is_not_element_present(*BasketPageLocators.BASKET_ITEMS), "Продукты присутствуют в корзине"
-    
